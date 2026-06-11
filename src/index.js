@@ -1,0 +1,168 @@
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import {
+  buildProfileUrl,
+  isBlockedHtml,
+  parseCitedByHtml,
+  parseProfileHtml,
+  SCHOLAR_ORIGIN,
+  validateScholarUser
+} from './scholar.js';
+
+const app = Fastify({
+  logger: true
+});
+
+const cache = new Map();
+const cacheTtlMs = Number(process.env.CACHE_TTL_SECONDS || 21600) * 1000;
+const corsOrigins = (process.env.CORS_ORIGIN || 'https://googlescholar.github.io,http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+await app.register(cors, {
+  origin(origin, callback) {
+    if (!origin || corsOrigins.includes(origin) || corsOrigins.includes('*')) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`Origin ${origin} is not allowed`), false);
+  }
+});
+
+app.get('/health', async () => ({
+  ok: true,
+  service: 'googlescholar-backend'
+}));
+
+app.get('/profile', async (request, reply) => {
+  const user = String(request.query.user || '').trim();
+  if (!validateScholarUser(user)) {
+    return reply.code(400).send({
+      error: 'Expected a Google Scholar user id in ?user=...'
+    });
+  }
+
+  const url = buildProfileUrl({
+    user,
+    hl: request.query.hl || 'en',
+    pagesize: request.query.pagesize || 100,
+    sortby: request.query.sortby || 'pubdate'
+  });
+
+  const data = await cachedJson(`profile:${url}`, async () => {
+    const html = await fetchScholarHtml(url);
+    return parseProfileHtml(html, {
+      user,
+      url,
+      fetchedAt: new Date().toISOString()
+    });
+  });
+
+  return data;
+});
+
+app.get('/cited-by', async (request, reply) => {
+  const url = String(request.query.url || '').trim();
+  const limit = Math.min(Math.max(Number(request.query.limit || 10), 1), 20);
+
+  if (!isAllowedScholarUrl(url)) {
+    return reply.code(400).send({
+      error: 'Expected a Google Scholar cited-by URL in ?url=...'
+    });
+  }
+
+  const data = await cachedJson(`cited-by:${url}:limit:${limit}`, async () => {
+    const html = await fetchScholarHtml(url);
+    return {
+      source: {
+        kind: 'google-scholar-cited-by-dom',
+        url,
+        fetchedAt: new Date().toISOString()
+      },
+      ...parseCitedByHtml(html, limit)
+    };
+  });
+
+  return data;
+});
+
+app.setErrorHandler((error, request, reply) => {
+  request.log.error(error);
+  const statusCode = error.statusCode || 500;
+  reply.code(statusCode).send({
+    error: error.message || 'Unexpected server error'
+  });
+});
+
+const port = Number(process.env.PORT || 3000);
+const host = process.env.HOST || '0.0.0.0';
+
+try {
+  await app.listen({ port, host });
+} catch (error) {
+  app.log.error(error);
+  process.exit(1);
+}
+
+async function fetchScholarHtml(url) {
+  const response = await fetch(url, {
+    headers: {
+      'Accept-Language': 'en-US,en;q=0.9',
+      'User-Agent':
+        'Mozilla/5.0 (compatible; GoogleScholarBackend/1.0; +https://github.com/GoogleScholar/backend)'
+    },
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) {
+    const error = new Error(`Google Scholar request failed with ${response.status}`);
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const html = await response.text();
+  if (isBlockedHtml(html)) {
+    const error = new Error('Google Scholar returned a login, captcha, or blocking page.');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return html;
+}
+
+async function cachedJson(key, loader) {
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.createdAt < cacheTtlMs) {
+    return {
+      ...hit.value,
+      cache: {
+        hit: true,
+        ttlSeconds: Math.max(0, Math.round((cacheTtlMs - (Date.now() - hit.createdAt)) / 1000))
+      }
+    };
+  }
+
+  const value = await loader();
+  cache.set(key, {
+    createdAt: Date.now(),
+    value
+  });
+
+  return {
+    ...value,
+    cache: {
+      hit: false,
+      ttlSeconds: Math.round(cacheTtlMs / 1000)
+    }
+  };
+}
+
+function isAllowedScholarUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin === SCHOLAR_ORIGIN && parsed.pathname === '/scholar';
+  } catch {
+    return false;
+  }
+}

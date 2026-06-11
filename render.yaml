@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: googlescholar-backend
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: CORS_ORIGIN
+        value: https://googlescholar.github.io
+      - key: CACHE_TTL_SECONDS
+        value: 21600
