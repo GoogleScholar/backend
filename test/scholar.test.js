@@ -82,6 +82,9 @@ describe('parseCitedByHtml', () => {
       {
         title: 'A citing paper',
         authors: 'C Author - 2026',
+        year: '2026',
+        citations: 0,
+        trendingScore: 0,
         snippet: 'A short abstract.',
         url: 'https://example.edu/citing'
       }

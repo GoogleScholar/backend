@@ -13,12 +13,16 @@ export function parseNumber(value) {
 
 export function toScholarUrl(href) {
   const value = cleanText(href);
-  if (!value || value.startsWith('javascript:')) {
+  if (!value) {
     return null;
   }
 
   try {
-    return new URL(value, SCHOLAR_ORIGIN).toString();
+    const url = new URL(value, SCHOLAR_ORIGIN);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+    return url.toString();
   } catch {
     return null;
   }
