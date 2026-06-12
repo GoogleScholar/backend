@@ -171,13 +171,22 @@ export function parseCitedByHtml(html, limit = 10) {
     let year = '';
     const yearMatch = authorsText.match(/\b(19|20)\d{2}\b/g);
     if (yearMatch && yearMatch.length > 0) {
-      year = yearMatch[yearMatch.length - 1]; // usually the last 4-digit number is the year
+      year = yearMatch[yearMatch.length - 1];
     }
+    
+    let citations = 0;
+    root.find('.gs_fl a').each((_, el) => {
+      const text = $(el).text();
+      if (/Cited by\s+\d+/i.test(text)) {
+        citations = parseInt(text.replace(/[^\d]/g, ''), 10) || 0;
+      }
+    });
 
     papers.push({
       title,
       authors: authorsText,
       year,
+      citations,
       snippet: cleanText(root.find('.gs_rs').first().text()),
       url: titleNode.attr('href') || ''
     });
