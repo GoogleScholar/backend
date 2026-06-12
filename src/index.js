@@ -14,6 +14,7 @@ const app = Fastify({
 });
 
 const cache = new Map();
+const pendingRequests = new Map();
 const cacheTtlMs = Number(process.env.CACHE_TTL_SECONDS || 21600) * 1000;
 const corsOrigins = (process.env.CORS_ORIGIN || 'https://googlescholar.github.io,http://localhost:5173')
   .split(',')
@@ -197,11 +198,29 @@ async function cachedJson(key, loader) {
     };
   }
 
-  const value = await loader();
-  cache.set(key, {
-    createdAt: Date.now(),
-    value
+  if (pendingRequests.has(key)) {
+    const value = await pendingRequests.get(key);
+    return {
+      ...value,
+      cache: {
+        hit: true, // We treat this as a cache hit, since the request was collapsed
+        ttlSeconds: Math.round(cacheTtlMs / 1000), // Approximate TTL
+      }
+    };
+  }
+
+  const promise = loader().then(value => {
+    cache.set(key, {
+      createdAt: Date.now(),
+      value
+    });
+    return value;
+  }).finally(() => {
+    pendingRequests.delete(key);
   });
+
+  pendingRequests.set(key, promise);
+  const value = await promise;
 
   return {
     ...value,

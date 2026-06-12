@@ -86,7 +86,10 @@ describe('parseCitedByHtml', () => {
         citations: 0,
         trendingScore: 0,
         snippet: 'A short abstract.',
-        url: 'https://example.edu/citing'
+        url: 'https://example.edu/citing',
+        year: '2026',
+        citations: 0,
+        trendingScore: 0
       }
     ]);
     assert.equal(parsed.nextPage, 'https://scholar.google.com/scholar?start=10&cites=42');
