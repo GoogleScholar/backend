@@ -87,11 +87,14 @@ app.get('/profile', async (request, reply) => {
     });
   }
 
+  const isTrending = request.query.sortby === 'trending';
+  const sortby = isTrending ? '' : (request.query.sortby || 'pubdate');
+
   const url = buildProfileUrl({
     user,
     hl: request.query.hl || 'en',
     pagesize: request.query.pagesize || 100,
-    sortby: request.query.sortby || 'pubdate'
+    sortby
   });
 
   const data = await cachedJson(`profile:${url}`, async () => {
@@ -102,6 +105,13 @@ app.get('/profile', async (request, reply) => {
       fetchedAt: new Date().toISOString()
     });
   });
+
+  if (isTrending) {
+    return {
+      ...data,
+      publications: [...(data.publications || [])].sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0))
+    };
+  }
 
   return data;
 });

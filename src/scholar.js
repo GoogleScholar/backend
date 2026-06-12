@@ -111,12 +111,18 @@ export function parseProfileHtml(html, options = {}) {
     const citedByUrl = toScholarUrl(citationNode.attr('href'));
     const id = extractCitationId(scholarUrl) || slugKey(`${title}-${year}-${index}`);
 
+    const currentYear = new Date().getFullYear();
+    const paperYear = year ? Number(year) : currentYear;
+    const age = Math.max(currentYear - paperYear + 1, 1);
+    const trendingScore = Number((parseNumber(citationNode.text()) / age).toFixed(2));
+
     const publication = {
       id,
       title,
       authors: grayLines[0] || '',
       venue: grayLines[1] || '',
       citations: parseNumber(citationNode.text()),
+      trendingScore,
       year,
       links: {
         scholar: scholarUrl,
@@ -182,11 +188,17 @@ export function parseCitedByHtml(html, limit = 10) {
       }
     });
 
+    const currentYear = new Date().getFullYear();
+    const paperYear = year ? Number(year) : currentYear;
+    const age = Math.max(currentYear - paperYear + 1, 1);
+    const trendingScore = Number((citations / age).toFixed(2));
+
     papers.push({
       title,
       authors: authorsText,
       year,
       citations,
+      trendingScore,
       snippet: cleanText(root.find('.gs_rs').first().text()),
       url: titleNode.attr('href') || ''
     });
