@@ -35,6 +35,7 @@ app.get('/', async () => ({
   endpoints: {
     '/health': 'Check API health status',
     '/profile?user={id}': 'Get profile data for a Google Scholar user',
+    '/bibtex?user={id}': 'Get all bibtex entries for a Google Scholar user as plain text',
     '/cited-by?url={url}': 'Get cited-by data for a specific publication URL'
   }
 }));
@@ -43,6 +44,40 @@ app.get('/health', async () => ({
   ok: true,
   service: 'googlescholar-backend'
 }));
+
+app.get('/bibtex', async (request, reply) => {
+  const user = String(request.query.user || '').trim();
+  if (!validateScholarUser(user)) {
+    return reply.code(400).send({
+      error: 'Expected a Google Scholar user id in ?user=...'
+    });
+  }
+
+  const url = buildProfileUrl({
+    user,
+    hl: request.query.hl || 'en',
+    pagesize: request.query.pagesize || 100,
+    sortby: request.query.sortby || 'pubdate'
+  });
+
+  const data = await cachedJson(`profile:${url}`, async () => {
+    const html = await fetchScholarHtml(url);
+    return parseProfileHtml(html, {
+      user,
+      url,
+      fetchedAt: new Date().toISOString()
+    });
+  });
+
+  const bibtexEntries = (data.publications || [])
+    .map(pub => pub.bibtex)
+    .filter(Boolean)
+    .join('\n\n');
+
+  reply.header('Content-Type', 'text/plain; charset=utf-8');
+  return reply.send(bibtexEntries);
+});
+
 
 app.get('/profile', async (request, reply) => {
   const user = String(request.query.user || '').trim();
