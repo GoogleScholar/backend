@@ -108,7 +108,7 @@ app.get('/profile', async (request, reply) => {
 
 app.get('/cited-by', async (request, reply) => {
   const url = String(request.query.url || '').trim();
-  const limit = Math.min(Math.max(Number(request.query.limit || 10), 1), 20);
+  const limit = Math.min(Math.max(Number(request.query.limit || 100), 1), 100);
 
   if (!isAllowedScholarUrl(url)) {
     return reply.code(400).send({

@@ -167,9 +167,17 @@ export function parseCitedByHtml(html, limit = 10) {
       return;
     }
 
+    const authorsText = cleanText(root.find('.gs_a').first().text());
+    let year = '';
+    const yearMatch = authorsText.match(/\b(19|20)\d{2}\b/g);
+    if (yearMatch && yearMatch.length > 0) {
+      year = yearMatch[yearMatch.length - 1]; // usually the last 4-digit number is the year
+    }
+
     papers.push({
       title,
-      authors: cleanText(root.find('.gs_a').first().text()),
+      authors: authorsText,
+      year,
       snippet: cleanText(root.find('.gs_rs').first().text()),
       url: titleNode.attr('href') || ''
     });
