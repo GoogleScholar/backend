@@ -49,14 +49,12 @@ export function validateScholarUser(user) {
   return /^[A-Za-z0-9_-]+$/.test(String(user || ''));
 }
 
+const blockedHtmlRegex = /our\s+systems\s+have\s+detected\s+unusual\s+traffic|to\s+continue\s+to\s+google\s+scholar\s+citations|please\s+show\s+you|recaptcha/i;
+
 export function isBlockedHtml(html) {
-  const text = cleanText(html).toLowerCase();
-  return (
-    text.includes('our systems have detected unusual traffic') ||
-    text.includes('to continue to google scholar citations') ||
-    text.includes('please show you') ||
-    text.includes('recaptcha')
-  );
+  // Use a regex test directly to avoid expensive string allocations
+  // and cleaning operations on potentially large HTML documents.
+  return blockedHtmlRegex.test(html);
 }
 
 export function parseProfileHtml(html, options = {}) {
