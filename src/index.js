@@ -167,6 +167,8 @@ async function fetchScholarHtml(url) {
       'User-Agent':
         'Mozilla/5.0 (compatible; GoogleScholarBackend/1.0; +https://github.com/GoogleScholar/backend)'
     },
+    // Security: Prevent SSRF via open redirects on Google Scholar
+    redirect: 'error',
     signal: AbortSignal.timeout(20000)
   });
 
