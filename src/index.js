@@ -27,7 +27,8 @@ await app.register(cors, {
       callback(null, true);
       return;
     }
-    callback(new Error(`Origin ${origin} is not allowed`), false);
+    // Security: Do not throw an error here to prevent log flooding / CPU DoS from arbitrary origins
+    callback(null, false);
   }
 });
 
@@ -145,8 +146,13 @@ app.get('/cited-by', async (request, reply) => {
 app.setErrorHandler((error, request, reply) => {
   request.log.error(error);
   const statusCode = error.statusCode || 500;
+  // Security: Do not expose internal server error messages to clients
+  const errorMessage = statusCode >= 500 && statusCode !== 502 && statusCode !== 503
+    ? 'Internal Server Error'
+    : (error.message || 'Unexpected server error');
+
   reply.code(statusCode).send({
-    error: error.message || 'Unexpected server error'
+    error: errorMessage
   });
 });
 
@@ -189,6 +195,11 @@ async function fetchScholarHtml(url) {
 }
 
 async function cachedJson(key, loader) {
+  // Security: Prevent memory exhaustion DoS from unbounded cache growth
+  if (cache.size > 2000) {
+    cache.clear();
+  }
+
   const hit = cache.get(key);
   if (hit && Date.now() - hit.createdAt < cacheTtlMs) {
     return {
