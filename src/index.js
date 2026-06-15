@@ -13,6 +13,14 @@ const app = Fastify({
   logger: true
 });
 
+// Security: Add common security headers for defense-in-depth
+app.addHook('onRequest', async (request, reply) => {
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('X-Frame-Options', 'DENY');
+  reply.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+});
+
 const cache = new Map();
 const pendingRequests = new Map();
 const cacheTtlMs = Number(process.env.CACHE_TTL_SECONDS || 21600) * 1000;
