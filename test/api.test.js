@@ -45,7 +45,7 @@ describe('Profile API', () => {
     assert.equal(data.source.user, 'vJjq9LwAAAAJ');
     assert.ok(data.publications.length > 0, 'Should have publications');
     
-    const hasFullData = data.publications.some(pub => pub.fullData);
-    assert.ok(hasFullData, 'Should have fetched full citation data for some publications');
+    const hasMergedData = data.publications.some(pub => pub.relatedUrl);
+    assert.ok(hasMergedData, 'Should have fetched full citation data for some publications');
   });
 });

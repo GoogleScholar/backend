@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { isBlockedHtml, parseCitedByHtml, parseProfileHtml, parseCitationHtml } from '../src/scholar.js';
+import { isBlockedHtml } from '../src/utils/http.js';
+import { parseCitedByHtml, parseProfileHtml, parseCitationHtml } from '../src/utils/parser.js';
 
 const profileFixture = `
 <html>
