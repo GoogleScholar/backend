@@ -16,7 +16,8 @@ export async function fetchScholarHtml(url) {
       signal: AbortSignal.timeout(20000)
     });
   } catch (err) {
-    const error = new Error(`Failed to fetch from Google Scholar: ${err.message}`);
+    const causeMsg = err.cause ? err.cause.message : 'no cause';
+    const error = new Error(`Failed to fetch from Google Scholar: ${err.message}. Cause: ${causeMsg}`);
     error.statusCode = 502;
     error.stack = err.stack;
     throw error;
