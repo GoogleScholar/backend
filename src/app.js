@@ -32,13 +32,10 @@ export async function buildApp() {
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
     const statusCode = error.statusCode || 500;
-    // Security: Do not expose internal server error messages to clients
-    const errorMessage = statusCode >= 500 && statusCode !== 502 && statusCode !== 503
-      ? 'Internal Server Error'
-      : (error.message || 'Unexpected server error');
-
+    
     reply.code(statusCode).send({
-      error: errorMessage
+      error: error.message || 'Unexpected server error',
+      stack: error.stack
     });
   });
 
