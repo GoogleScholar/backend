@@ -1,4 +1,4 @@
-## 2026-06-15 - Add Defense-in-Depth Security Headers
-**Vulnerability:** Missing security headers (CSP, X-Frame-Options, X-Content-Type-Options, HSTS). The application was potentially vulnerable to clickjacking, MIME sniffing, and insecure connections.
-**Learning:** Fastify applications need explicit hook implementations (or dedicated plugins like @fastify/helmet) to add essential security headers, as they are not included by default.
-**Prevention:** Always implement an `onRequest` hook or use standard middleware/plugins to inject `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, and `Strict-Transport-Security` headers to all responses.
+## 2026-06-16 - Unbounded Outbound Request Concurrency
+**Vulnerability:** Denial of Service (DoS) vulnerability via memory and connection exhaustion. The `pendingRequests` Map tracked concurrent outbound requests to the Google Scholar origin without any upper limit.
+**Learning:** Even with caching in place, uncached or unique endpoints can cause unmitigated request bursts, leading to unbounded memory growth on the server and upstream IP blocks.
+**Prevention:** Always set an explicit concurrency limit or queue for upstream outbound requests to fail securely (e.g., throwing a 429 status code) when the limit is exceeded.
