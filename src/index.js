@@ -208,6 +208,13 @@ async function cachedJson(key, loader) {
     cache.clear();
   }
 
+  // Security: Prevent request exhaustion and upstream IP ban DoS
+  if (pendingRequests.size >= 100 && !pendingRequests.has(key)) {
+    const error = new Error('Too many concurrent outbound requests. Please try again later.');
+    error.statusCode = 429;
+    throw error;
+  }
+
   const hit = cache.get(key);
   if (hit && Date.now() - hit.createdAt < cacheTtlMs) {
     return {
