@@ -5,16 +5,22 @@ export function isBlockedHtml(html) {
 }
 
 export async function fetchScholarHtml(url) {
-  const response = await fetch(url, {
-    headers: {
-      'Accept-Language': 'en-US,en;q=0.9',
-      'User-Agent':
-        'Mozilla/5.0 (compatible; GoogleScholarBackend/1.0; +https://github.com/GoogleScholar/backend)'
-    },
-    // Security: Prevent SSRF via open redirects on Google Scholar
-    redirect: 'error',
-    signal: AbortSignal.timeout(20000)
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        'Accept-Language': 'en-US,en;q=0.9',
+        'User-Agent':
+          'Mozilla/5.0 (compatible; GoogleScholarBackend/1.0; +https://github.com/GoogleScholar/backend)'
+      },
+      signal: AbortSignal.timeout(20000)
+    });
+  } catch (err) {
+    const error = new Error(`Failed to fetch from Google Scholar: ${err.message}`);
+    error.statusCode = 502;
+    error.stack = err.stack;
+    throw error;
+  }
 
   if (!response.ok) {
     const error = new Error(`Google Scholar request failed with ${response.status}`);
