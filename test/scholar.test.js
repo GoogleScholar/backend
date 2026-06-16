@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { isBlockedHtml, parseCitedByHtml, parseProfileHtml } from '../src/scholar.js';
+import { isBlockedHtml, parseCitedByHtml, parseProfileHtml, parseCitationHtml } from '../src/scholar.js';
 
 const profileFixture = `
 <html>
@@ -109,5 +109,24 @@ describe('Security Headers', () => {
     // Basic verification without spinning up fastify entirely in the test context if possible
     // or we can test it using node fetch
     assert.ok(true);
+  });
+});
+
+describe('parseCitationHtml', () => {
+  it('extracts full citation info', () => {
+    const html = `
+      <div id="gsc_vcd_title">315. Estimating Therapeutic Alliance From Clinical Interview Sessions</div>
+      <div class="gsc_vcd_field">Authors</div>
+      <div class="gsc_vcd_value">Joseph Colonel, Bailey Todtfeld</div>
+      <div class="gsc_vcd_field">Publication date</div>
+      <div class="gsc_vcd_value">2026/5/15</div>
+      <div class="gsc_vcd_field">Journal</div>
+      <div class="gsc_vcd_value">Biological Psychiatry</div>
+    `;
+    const result = parseCitationHtml(html);
+    assert.equal(result.title, '315. Estimating Therapeutic Alliance From Clinical Interview Sessions');
+    assert.equal(result.authors, 'Joseph Colonel, Bailey Todtfeld');
+    assert.equal(result.publicationDate, '2026/5/15');
+    assert.equal(result.journal, 'Biological Psychiatry');
   });
 });

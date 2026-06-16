@@ -273,3 +273,41 @@ function extractCitationId(url) {
   const match = url.match(/[?&]citation_for_view=([^&#]+)/);
   return match ? decodeURIComponent(match[1]) : '';
 }
+
+export function parseCitationHtml(html) {
+  const $ = cheerio.load(html);
+  const title = cleanText($('#gsc_vcd_title').text() || $('#gsc_oci_title').text() || $('.gsc_vcd_title a').text() || $('.gsc_oci_title a').text() || $('.gsc_vcd_title').text() || $('.gsc_oci_title').text());
+  
+  const fields = {};
+  $('.gsc_vcd_field, .gsc_oci_field').each((_, el) => {
+    const field = slugKey($(el).text());
+    const value = cleanText($(el).next('.gsc_vcd_value, .gsc_oci_value').text());
+    if (field && value) {
+      fields[field] = value;
+    }
+  });
+
+  let relatedUrl = '';
+  $('a').each((_, el) => {
+    const text = $(el).text();
+    if (text.toLowerCase().includes('related')) {
+      const href = $(el).attr('href');
+      if (href) {
+        relatedUrl = new URL(href, SCHOLAR_ORIGIN).toString();
+      }
+    }
+  });
+
+  return {
+    title: title || '',
+    authors: fields.authors || '',
+    publicationDate: fields.publication_date || '',
+    journal: fields.journal || fields.source || '',
+    volume: fields.volume || '',
+    issue: fields.issue || '',
+    pages: fields.pages || '',
+    publisher: fields.publisher || '',
+    description: fields.description || '',
+    relatedUrl
+  };
+}

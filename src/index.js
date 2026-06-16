@@ -5,9 +5,23 @@ import {
   isBlockedHtml,
   parseCitedByHtml,
   parseProfileHtml,
+  parseCitationHtml,
   SCHOLAR_ORIGIN,
   validateScholarUser
 } from './scholar.js';
+
+async function mapConcurrent(items, limit, asyncFn) {
+  const results = new Array(items.length);
+  let index = 0;
+  const workers = Array.from({ length: limit }, async () => {
+    while (index < items.length) {
+      const i = index++;
+      results[i] = await asyncFn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
 
 const app = Fastify({
   logger: true
@@ -109,11 +123,47 @@ app.get('/profile', async (request, reply) => {
 
   const data = await cachedJson(`profile:${url}`, async () => {
     const html = await fetchScholarHtml(url);
-    return parseProfileHtml(html, {
+    const profile = parseProfileHtml(html, {
       user,
       url,
       fetchedAt: new Date().toISOString()
     });
+
+    if (profile.publications && profile.publications.length > 0) {
+      const limit = 3;
+      await mapConcurrent(profile.publications, limit, async (pub) => {
+        if (!pub.id) return;
+        const citationUrl = new URL('/citations', SCHOLAR_ORIGIN);
+        citationUrl.searchParams.set('view_op', 'view_citation');
+        citationUrl.searchParams.set('hl', request.query.hl || 'en');
+        citationUrl.searchParams.set('user', user);
+        citationUrl.searchParams.set('citation_for_view', pub.id);
+        
+        try {
+          const fullHtml = await fetchScholarHtml(citationUrl.toString());
+          const fullInfo = parseCitationHtml(fullHtml);
+          
+          if (fullInfo.authors) pub.authors = fullInfo.authors;
+          if (fullInfo.journal) pub.venue = fullInfo.journal;
+          if (fullInfo.description) pub.abstract = fullInfo.description;
+          pub.fullData = fullInfo;
+
+          if (fullInfo.relatedUrl) {
+            try {
+              const relatedHtml = await fetchScholarHtml(fullInfo.relatedUrl);
+              const relatedData = parseCitedByHtml(relatedHtml, 5); // get top 5 related
+              pub.relatedPapers = relatedData.items || [];
+            } catch (relatedErr) {
+              request.log.warn(`Failed to fetch related papers for ${pub.id}: ${relatedErr.message}`);
+            }
+          }
+        } catch (err) {
+          request.log.warn(`Failed to fetch full info for ${pub.id}: ${err.message}`);
+        }
+      });
+    }
+
+    return profile;
   });
 
   if (isTrending) {
