@@ -6,7 +6,12 @@ const pendingRequests = new Map();
 export async function cachedJson(key, loader) {
   // Security: Prevent memory exhaustion DoS from unbounded cache growth
   if (cache.size > 2000) {
-    cache.clear();
+    // ⚡ Bolt: Don't clear entire cache (causes performance cliff and API rate limits).
+    // Instead, evict the oldest 20% to maintain a high cache hit rate while bounding memory.
+    const keysToDelete = Array.from(cache.keys()).slice(0, 400);
+    for (const k of keysToDelete) {
+      cache.delete(k);
+    }
   }
 
   // Security: Prevent request exhaustion and upstream IP ban DoS

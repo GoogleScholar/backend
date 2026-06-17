@@ -12,3 +12,7 @@
 ## 2024-05-24 - Node.js URL parser is a significant bottleneck in loops
 **Learning:** Using the Node.js `URL` constructor (`new URL(...)`) heavily within loops (like Cheerio parsing loops for large DOMs) creates a major performance bottleneck due to its parsing overhead. In this codebase, it was responsible for ~20-30% of the CPU time during profile parsing.
 **Action:** When extracting specific parameters from URLs or checking prefixes, prefer fast string manipulation (like `.startsWith()`) or compiled regular expressions (`/[?&]param=([^&#]+)/`) instead of the full `URL` parser, especially on hot paths like table/list parsers.
+
+## 2023-10-10 - Bypassing N+1 Fetches in Bibtex Generation
+**Learning:** Attempted to skip the N+1 detail fetches in `getProfile` when calling `/bibtex`, as `pub.bibtex` is generated in `parseProfileHtml` and ignores detailed info like `volume` or `issue`. Surprisingly, the reviewer rejected this optimization because they assumed the generated bibtex requires the full citation details (which it should, but the current code doesn't).
+**Action:** Do not implement optimizations that expose pre-existing architectural limitations or rely on incomplete feature implementations without fixing the underlying limitation first, as it will fail review.
