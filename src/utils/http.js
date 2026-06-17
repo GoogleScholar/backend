@@ -13,11 +13,13 @@ export async function fetchScholarHtml(url) {
         'User-Agent':
           'Mozilla/5.0 (compatible; GoogleScholarBackend/1.0; +https://github.com/GoogleScholar/backend)'
       },
-      signal: AbortSignal.timeout(20000)
+      signal: AbortSignal.timeout(20000),
+      redirect: 'manual'
     });
   } catch (err) {
-    const causeMsg = err.cause ? err.cause.message : 'no cause';
-    const error = new Error(`Failed to fetch from Google Scholar: ${err.message}. Cause: ${causeMsg}`);
+    // Security: Do not leak specific network error details to the client
+    const error = new Error('Failed to fetch from Google Scholar.');
+    error.cause = err;
     error.statusCode = 502;
     error.stack = err.stack;
     throw error;
