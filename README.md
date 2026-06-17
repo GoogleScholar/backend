@@ -41,6 +41,32 @@ Run tests:
 npm test
 ```
 
+### Using Docker
+
+To run the API locally using Docker (useful for bypassing cloud IP restrictions):
+```bash
+docker-compose up -d
+```
+The API will be available at `http://localhost:3000`.
+
+## Example Usage
+
+You can query the API using `curl` or from your frontend code.
+
+**Using `curl`:**
+```bash
+curl "http://localhost:3000/profile?user=AREhBXYAAAAJ"
+```
+
+**Using JavaScript `fetch`:**
+```javascript
+async function getProfile() {
+  const res = await fetch('http://localhost:3000/profile?user=AREhBXYAAAAJ');
+  const data = await res.json();
+  console.log(data.publications);
+}
+```
+
 ## Environment Variables
 
 You can configure the backend via environment variables:
