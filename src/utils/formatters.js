@@ -76,7 +76,7 @@ export function generateBibtex(publication) {
   const fields = {
     title: publication.title,
     author: cleanText(publication.authors).replace(/,\s+/g, ' and '),
-    journal: publication.venue,
+    journal: publication.journal || publication.venue,
     year: Number(publication.year) > 0 ? String(publication.year) : '',
     url: publication.links?.external || publication.links?.scholar,
     note: `Cited by ${Number(publication.citations) || 0}`

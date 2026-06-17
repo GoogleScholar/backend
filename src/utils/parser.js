@@ -202,11 +202,12 @@ export function parseCitationHtml(html) {
     authors: fields.authors || '',
     publicationDate: fields.publication_date || '',
     journal: fields.journal || fields.source || '',
+    venue: fields.journal || fields.source || '',
     volume: fields.volume || '',
     issue: fields.issue || '',
     pages: fields.pages || '',
     publisher: fields.publisher || '',
-    description: fields.description || '',
+    abstract: fields.description || '',
     relatedUrl
   };
 }

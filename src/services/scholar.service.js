@@ -1,6 +1,6 @@
 import { fetchScholarHtml } from '../utils/http.js';
 import { parseProfileHtml, parseCitationHtml, parseCitedByHtml } from '../utils/parser.js';
-import { buildProfileUrl } from '../utils/formatters.js';
+import { buildProfileUrl, generateBibtex } from '../utils/formatters.js';
 import { cachedJson } from './cache.service.js';
 import { SCHOLAR_ORIGIN, CONCURRENCY_LIMIT } from '../config.js';
 
@@ -39,6 +39,8 @@ export async function getProfile(user, { hl = 'en', pagesize = 100, sortby = 'pu
           
           // Merge full data directly with the entry
           Object.assign(pub, fullInfo);
+          // Regenerate bibtex with the full journal name
+          pub.bibtex = generateBibtex(pub);
         } catch (err) {
           console.warn(`Failed to fetch full info for ${pub.id}: ${err.message}`);
         }
