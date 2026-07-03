@@ -58,6 +58,12 @@ You can query the API using `curl` or from your frontend code.
 curl "http://localhost:3000/profile?user=AREhBXYAAAAJ"
 ```
 
+or
+
+```bash
+curl "https://backend-3aen.onrender.com/bibtex?user=XNaNgkwAAAAJ"
+```
+
 **Using JavaScript `fetch`:**
 ```javascript
 async function getProfile() {
