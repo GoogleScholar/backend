@@ -26,7 +26,7 @@ export async function fetchScholarHtml(url) {
 
   if (!response.ok) {
     const error = new Error(`Google Scholar request failed with ${response.status}`);
-    error.statusCode = 502;
+    error.statusCode = response.status === 429 ? 429 : 502;
     throw error;
   }
 
