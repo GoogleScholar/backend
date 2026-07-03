@@ -11,10 +11,9 @@ export async function fetchScholarHtml(url) {
       headers: {
         'Accept-Language': 'en-US,en;q=0.9',
         'User-Agent':
-          'Mozilla/5.0 (compatible; GoogleScholarBackend/1.0; +https://github.com/GoogleScholar/backend)'
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      signal: AbortSignal.timeout(20000),
-      redirect: 'manual'
+      signal: AbortSignal.timeout(20000)
     });
   } catch (err) {
     // Security: Do not leak specific network error details to the client
